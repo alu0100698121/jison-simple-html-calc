@@ -6,18 +6,23 @@
 %%
 
 \s+                   /* skip whitespace */
+[!<>=]"="|[<>]	      return 'COMPARISON'
 [0-9]+("."[0-9]+)?\b  return 'NUMBER'
 "*"                   return '*'
 "/"                   return '/'
 "-"                   return '-'
 "+"                   return '+'
+"="		      return '='
 "^"                   return '^'
 "!"                   return '!'
 "%"                   return '%'
 "("                   return '('
 ")"                   return ')'
+"IF"		      return 'IF'
+"ELSE"		      return 'ELSE'
 "PI"                  return 'PI'
 "E"                   return 'E'
+\w+                   return 'ID'
 <<EOF>>               return 'EOF'
 .                     return 'INVALID'
 
@@ -37,37 +42,46 @@
 %% /* language grammar */
 
 expressions
-    : e EOF
+    : statement EOF
         { typeof console !== 'undefined' ? console.log($1) : print($1);
           return $1; }
     ;
 
+statement
+    : ID COMPARISON e
+	{$$ = $3+" "+$1+" "+$2;}
+    | ID '=' statement 
+	{$$ = $3+" "+'&'+$1+" "+'=';}
+    | e
+	{$$ = $1;}
+    ;
+    
 e
     : e '+' e
-        {$$ = $1+$3;}
+        {$$ = $1+" "+$3+" "+'+';}
     | e '-' e
-        {$$ = $1-$3;}
+        {$$ = $1+" "+$3+" "+'-';}
     | e '*' e
-        {$$ = $1*$3;}
+        {$$ = $1+" "+$3+" "+'*';}
     | e '/' e
-        {$$ = $1/$3;}
+        {$$ = $1+" "+$3+" "+'/';}
     | e '^' e
-        {$$ = Math.pow($1, $3);}
+        {$$ = $1+" "+$3+" "+'^';}
     | e '!'
         {
-          $$ = (function fact (n) { return n==0 ? 1 : fact(n-1) * n })($1);
+          $$ = $1+" !";
         }
     | e '%'
-        {$$ = $1/100;}
+        {$$ = $1+" %";}
     | '-' e %prec UMINUS
-        {$$ = -$2;}
+        {$$ = $2+" NEG";}
     | '(' e ')'
         {$$ = $2;}
     | NUMBER
-        {$$ = Number(yytext);}
+        {$$ = $1;}
     | E
-        {$$ = Math.E;}
+        {$$ = 'E';}
     | PI
-        {$$ = Math.PI;}
+        {$$ = "PI";}
     ;
 
